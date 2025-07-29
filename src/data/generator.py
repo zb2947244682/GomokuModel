@@ -225,35 +225,64 @@ class DataGenerator:
             state = board.get_state_tensor()
             states.append(state.copy())
             
-            # 获取智能候选位置
-            smart_moves = self.rules.get_smart_moves(board, top_k=10)
+            # 获取智能候选位置 - 增加计算量以提高CPU使用率
+            smart_moves = self.rules.get_smart_moves(board, top_k=15)  # 增加候选数量
             
             if not smart_moves:
                 smart_moves = board.get_legal_moves()
             
             if smart_moves:
-                # 创建策略分布
+                # 创建策略分布 - 增加更复杂的计算
                 policy = np.zeros(self.board_size * self.board_size, dtype=np.float32)
                 
-                # 给智能位置分配概率
-                total_prob = 1.0
-                for i, (row, col) in enumerate(smart_moves):
-                    # 前面的位置获得更高概率
-                    prob = total_prob * (0.5 ** i)
-                    policy[row * self.board_size + col] = prob
-                    total_prob -= prob
-                    if total_prob <= 0:
-                        break
+                # 对每个候选位置进行更详细的评估
+                move_scores = []
+                for row, col in smart_moves:
+                    # 模拟落子并评估局面
+                    test_board = board.copy()
+                    test_board.make_move(row, col)
+                    
+                    # 计算多个评估指标
+                    score = 0.0
+                    score += self.rules.evaluate_position(test_board, row, col)
+                    score += self.rules.evaluate_board(test_board) * 0.1
+                    
+                    # 添加一些随机性
+                    score += np.random.normal(0, 0.1)
+                    
+                    move_scores.append((row, col, score))
                 
-                # 归一化
-                if policy.sum() > 0:
-                    policy = policy / policy.sum()
+                # 根据分数排序
+                move_scores.sort(key=lambda x: x[2], reverse=True)
+                
+                # 分配概率 - 使用softmax分布
+                scores = np.array([score for _, _, score in move_scores])
+                if len(scores) > 0:
+                    # 应用温度参数的softmax
+                    temperature = 0.5
+                    exp_scores = np.exp(scores / temperature)
+                    probs = exp_scores / np.sum(exp_scores)
+                    
+                    for i, (row, col, _) in enumerate(move_scores):
+                        policy[row * self.board_size + col] = probs[i]
                 
                 policies.append(policy)
                 
-                # 选择动作
-                row, col = smart_moves[0]  # 选择最佳位置
-                board.make_move(row, col)
+                # 选择动作 - 根据概率选择
+                if len(move_scores) > 0:
+                    # 使用概率选择，但偏向高分位置
+                    choice_prob = np.random.random()
+                    if choice_prob < 0.7:  # 70%选择最佳
+                        row, col = move_scores[0][:2]
+                    elif choice_prob < 0.9 and len(move_scores) > 1:  # 20%选择次佳
+                        row, col = move_scores[1][:2]
+                    else:  # 10%随机选择
+                        idx = np.random.randint(len(move_scores))
+                        row, col = move_scores[idx][:2]
+                    
+                    board.make_move(row, col)
+                else:
+                    break
             else:
                 break
         

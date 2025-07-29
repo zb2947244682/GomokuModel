@@ -72,16 +72,67 @@ class ModelTrainer:
         """
         logging.info(f"开始训练，目标时间: {max_time_minutes} 分钟")
         
+        # 数据预处理和增强 - 增加CPU密集型操作
+        logging.info(f"开始数据预处理，原始数据量: {len(training_data['states'])}")
+        
+        # 数据增强
+        augmented_states = []
+        augmented_policies = []
+        augmented_values = []
+        
+        for i, (state, policy, value) in enumerate(zip(training_data['states'], 
+                                                       training_data['policies'], 
+                                                       training_data['values'])):
+            # 原始数据
+            augmented_states.append(state)
+            augmented_policies.append(policy)
+            augmented_values.append(value)
+            
+            # 数据增强 - 随机应用变换以增加CPU使用
+            if np.random.random() < 0.4:  # 40%概率进行数据增强
+                # 随机选择一种变换
+                transform_type = np.random.randint(8)
+                
+                if transform_type == 0:  # 旋转90度
+                    aug_state = np.rot90(state, k=1, axes=(0, 1))
+                    aug_policy = policy.reshape(15, 15)
+                    aug_policy = np.rot90(aug_policy, k=1).flatten()
+                elif transform_type == 1:  # 旋转180度
+                    aug_state = np.rot90(state, k=2, axes=(0, 1))
+                    aug_policy = policy.reshape(15, 15)
+                    aug_policy = np.rot90(aug_policy, k=2).flatten()
+                elif transform_type == 2:  # 旋转270度
+                    aug_state = np.rot90(state, k=3, axes=(0, 1))
+                    aug_policy = policy.reshape(15, 15)
+                    aug_policy = np.rot90(aug_policy, k=3).flatten()
+                elif transform_type == 3:  # 水平翻转
+                    aug_state = np.flip(state, axis=1)
+                    aug_policy = policy.reshape(15, 15)
+                    aug_policy = np.flip(aug_policy, axis=1).flatten()
+                elif transform_type == 4:  # 垂直翻转
+                    aug_state = np.flip(state, axis=0)
+                    aug_policy = policy.reshape(15, 15)
+                    aug_policy = np.flip(aug_policy, axis=0).flatten()
+                else:  # 其他变换
+                    aug_state = state
+                    aug_policy = policy
+                
+                augmented_states.append(aug_state)
+                augmented_policies.append(aug_policy)
+                augmented_values.append(value)
+        
+        logging.info(f"数据增强完成，增强后数据量: {len(augmented_states)}")
+        
         # 准备训练数据
-        states = torch.FloatTensor(training_data['states']).to(self.device)
-        policies = torch.FloatTensor(training_data['policies']).to(self.device)
-        values = torch.FloatTensor(training_data['values']).to(self.device)
+        states = torch.FloatTensor(np.array(augmented_states)).to(self.device)
+        policies = torch.FloatTensor(np.array(augmented_policies)).to(self.device)
+        values = torch.FloatTensor(np.array(augmented_values)).to(self.device)
         
         # 数据维度转换：(N, H, W, C) -> (N, C, H, W)
         states = states.permute(0, 3, 1, 2)
         
         dataset_size = len(states)
-        logging.info(f"训练数据大小: {dataset_size}")
+        logging.info(f"最终训练数据大小: {dataset_size}")
         
         # 训练循环
         start_time = time.time()
