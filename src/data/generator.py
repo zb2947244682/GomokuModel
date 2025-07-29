@@ -41,7 +41,7 @@ class DataGenerator:
             self.mcts = SimpleMCTS(
                 board_size=board_size,
                 num_simulations=mcts_simulations,
-                max_time_ms=500  # 每步最多500ms
+                max_time_ms=200  # 减少到200ms以加快生成
             )
         else:
             self.mcts = None

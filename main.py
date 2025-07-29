@@ -60,18 +60,18 @@ def main():
     create_directories()
     
     try:
-        # 训练参数
+        # 训练参数 - 针对10分钟训练优化
         config = {
             'board_size': 15,
-            'num_games': 10000,  # 用户要求的训练局数
+            'num_games': 1000,  # 减少对局数以适应时间限制
             'max_training_time': 600,  # 10分钟训练时间
             'batch_size': 32,
             'learning_rate': 0.001,
-            'model_channels': 64,  # 控制模型大小
-            'num_residual_blocks': 4,  # 4层残差块
+            'model_channels': 32,  # 减小模型以加快训练
+            'num_residual_blocks': 3,  # 减少残差块
             'target_model_size_mb': 100,  # 目标模型大小
-            'mcts_simulations': 50,  # MCTS模拟次数（CPU优化）
-            'use_mcts_ratio': 0.3  # 30%使用MCTS，70%使用智能随机
+            'mcts_simulations': 20,  # 减少MCTS模拟次数以加快生成
+            'use_mcts_ratio': 0.2  # 减少MCTS比例以加快生成
         }
         
         logger.info("开始训练流程...")
