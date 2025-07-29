@@ -1,0 +1,7 @@
+2025-07-29 15:11:25,361 - __main__ - INFO - 开始训练流程...
+2025-07-29 15:11:25,361 - __main__ - INFO - 配置参数: {'board_size': 15, 'num_games': 10000, 'max_training_time': 600, 'batch_size': 32, 'learning_rate': 0.001, 'model_channels': 64, 'num_residual_blocks': 4, 'target_model_size_mb': 100, 'mcts_simulations': 50, 'use_mcts_ratio': 0.3}
+2025-07-29 15:11:25,361 - __main__ - INFO - 步骤1: 生成训练数据
+2025-07-29 15:11:25,361 - __main__ - INFO - 生成MCTS数据: 3000 局
+2025-07-29 15:11:25,361 - __main__ - INFO - 生成智能随机数据: 7000 局
+2025-07-29 15:11:25,361 - src.data.generator - INFO - 开始生成 3000 局训练数据，策略: mcts
+2025-07-29 15:11:25,361 - src.data.generator - INFO - 生成 3000 局MCTS数据
